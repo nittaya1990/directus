@@ -22,13 +22,19 @@ class Emitter {
 		this.initEmitter = new EventEmitter2(emitterOptions);
 	}
 
-	public async emitFilter(
-		event: string,
-		payload: any,
-		meta: Record<string, any>,
-		context: HookContext
-	): Promise<any[]> {
-		return await this.filterEmitter.emitAsync(event, payload, meta, context);
+	public async emitFilter(event: string, payload: any, meta: Record<string, any>, context: HookContext): Promise<any> {
+		const listeners = this.filterEmitter.listeners(event) as FilterHandler[];
+
+		let updatedPayload = payload;
+		for (const listener of listeners) {
+			const result = await listener(updatedPayload, meta, context);
+
+			if (result !== undefined) {
+				updatedPayload = result;
+			}
+		}
+
+		return updatedPayload;
 	}
 
 	public async emitAction(event: string, meta: Record<string, any>, context: HookContext): Promise<void> {
